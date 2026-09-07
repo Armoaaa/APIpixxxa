@@ -6,7 +6,7 @@ namespace PizzeriaDigital.Shared.Models;
 /// </summary>
 public class ItemPedido
 {
-    public Guid PizzaId { get; init; }
+    public int PizzaId { get; init; }
     public string NombrePizza { get; init; } = string.Empty;
     public int Cantidad { get; init; }
     public decimal Subtotal { get; init; }

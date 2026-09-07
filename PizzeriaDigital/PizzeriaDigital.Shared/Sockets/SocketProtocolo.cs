@@ -27,7 +27,7 @@ public static class SocketProtocolo
         var partes = linea.Split('|', 3);
         if (partes.Length < 2
             || !Enum.TryParse<TipoMensaje>(partes[0], out var tipo)
-            || !Guid.TryParse(partes[1], out var pedidoId))
+            || !int.TryParse(partes[1], out var pedidoId))
         {
             throw new FormatException($"Mensaje con formato inválido: '{linea}'");
         }

@@ -6,7 +6,7 @@ namespace PizzeriaDigital.Shared.Models;
 /// </summary>
 public class Cliente
 {
-    public Guid Id { get; init; }
+    public int Id { get; init; }
     public string Nombre { get; init; } = string.Empty;
     public string Telefono { get; init; } = string.Empty;
     public string Direccion { get; init; } = string.Empty;

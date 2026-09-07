@@ -38,7 +38,7 @@ static async Task ManejarEntregaAsync(TcpClient clienteConectado, Random random,
     using (clienteConectado)
     using (var stream = clienteConectado.GetStream())
     {
-        Guid pedidoId = Guid.Empty;
+        int pedidoId = 0;
         try
         {
             var mensaje = await SocketProtocolo.RecibirMensajeAsync(stream);

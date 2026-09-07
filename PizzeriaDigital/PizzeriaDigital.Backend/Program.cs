@@ -24,6 +24,8 @@ builder.Services.AddSingleton<OrquestadorPedidos>();
 
 var app = builder.Build();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pizzería Digital API v1"));
 
@@ -49,7 +51,7 @@ app.MapPost("/api/clientes", (ClienteRequest req, ClienteRepository repo) =>
 .WithSummary("Registra un cliente nuevo (sin contraseña).");
 
 // ---------- GET /api/clientes/{id} ----------
-app.MapGet("/api/clientes/{id:guid}", (Guid id, ClienteRepository repo) =>
+app.MapGet("/api/clientes/{id:int}", (int id, ClienteRepository repo) =>
 {
     var cliente = repo.Obtener(id);
     return cliente is null
@@ -121,7 +123,7 @@ app.MapPost("/api/pedidos", (
 .WithSummary("Crea un pedido y dispara la orquestación (Cocina -> Reparto) en background.");
 
 // ---------- GET /api/pedidos/{id} ----------
-app.MapGet("/api/pedidos/{id:guid}", (Guid id, PedidoRepository pedidos) =>
+app.MapGet("/api/pedidos/{id:int}", (int id, PedidoRepository pedidos) =>
 {
     var pedido = pedidos.Obtener(id);
     return pedido is null

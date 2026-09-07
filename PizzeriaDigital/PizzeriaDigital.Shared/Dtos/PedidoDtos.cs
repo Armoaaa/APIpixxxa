@@ -4,10 +4,10 @@ namespace PizzeriaDigital.Shared.Dtos;
 public record ClienteRequest(string Nombre, string? Telefono, string Direccion);
 
 /// <summary>Una línea del pedido tal como la manda el cliente (solo id + cantidad)</summary>
-public record ItemPedidoRequest(Guid PizzaId, int Cantidad);
+public record ItemPedidoRequest(int PizzaId, int Cantidad);
 
 /// <summary>Body para POST /api/pedidos</summary>
-public record CrearPedidoRequest(Guid ClienteId, List<ItemPedidoRequest> Items);
+public record CrearPedidoRequest(int ClienteId, List<ItemPedidoRequest> Items);
 
 /// <summary>
 /// Forma estándar de error que devuelve la API (a diferencia de APIs

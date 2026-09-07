@@ -6,8 +6,8 @@ namespace PizzeriaDigital.Shared.Models;
 /// </summary>
 public class Pedido
 {
-    public Guid Id { get; init; }
-    public Guid ClienteId { get; init; }
+    public int Id { get; init; }
+    public int ClienteId { get; init; }
     public List<ItemPedido> Items { get; init; } = new();
     public DateTime FechaCreacion { get; init; }
     public EstadoPedido Estado { get; set; }

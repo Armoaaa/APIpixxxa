@@ -10,14 +10,15 @@ namespace PizzeriaDigital.Backend.Repositorios;
 /// </summary>
 public class PedidoRepository
 {
-    private readonly ConcurrentDictionary<Guid, Pedido> _pedidos = new();
+    private readonly ConcurrentDictionary<int, Pedido> _pedidos = new();
     private readonly object _lock = new();
+    private int _siguienteId;
 
-    public Pedido Crear(Guid clienteId, List<ItemPedido> items)
+    public Pedido Crear(int clienteId, List<ItemPedido> items)
     {
         var pedido = new Pedido
         {
-            Id = Guid.NewGuid(),
+            Id = Interlocked.Increment(ref _siguienteId),
             ClienteId = clienteId,
             Items = items,
             FechaCreacion = DateTime.UtcNow,
@@ -28,9 +29,9 @@ public class PedidoRepository
         return pedido;
     }
 
-    public Pedido? Obtener(Guid id) => _pedidos.GetValueOrDefault(id);
+    public Pedido? Obtener(int id) => _pedidos.GetValueOrDefault(id);
 
-    public void ActualizarEstado(Guid id, EstadoPedido nuevoEstado)
+    public void ActualizarEstado(int id, EstadoPedido nuevoEstado)
     {
         lock (_lock)
         {
@@ -43,7 +44,7 @@ public class PedidoRepository
         }
     }
 
-    public void MarcarError(Guid id, string mensaje)
+    public void MarcarError(int id, string mensaje)
     {
         lock (_lock)
         {

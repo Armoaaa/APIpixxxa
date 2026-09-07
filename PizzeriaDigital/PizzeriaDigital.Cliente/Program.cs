@@ -173,7 +173,7 @@ await MonitorearPedidoAsync(http, pedido.Id, jsonOpciones);
 
 // ================== Funciones auxiliares ==================
 
-static async Task MonitorearPedidoAsync(HttpClient http, Guid pedidoId, JsonSerializerOptions jsonOpciones)
+static async Task MonitorearPedidoAsync(HttpClient http, int pedidoId, JsonSerializerOptions jsonOpciones)
 {
     Console.WriteLine("\nSiguiendo el estado del pedido (Ctrl+C para salir)...\n");
 

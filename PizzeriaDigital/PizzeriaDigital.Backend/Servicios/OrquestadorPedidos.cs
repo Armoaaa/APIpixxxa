@@ -35,7 +35,7 @@ public class OrquestadorPedidos
         _config = config;
     }
 
-    public async Task ProcesarPedidoAsync(Guid pedidoId, CancellationToken ct = default)
+    public async Task ProcesarPedidoAsync(int pedidoId, CancellationToken ct = default)
     {
         try
         {
@@ -68,7 +68,7 @@ public class OrquestadorPedidos
     }
 
     private async Task DelegarYEsperarAsync(
-        Guid pedidoId,
+        int pedidoId,
         string nombreServicio,
         string host,
         int puerto,
@@ -98,7 +98,7 @@ public class OrquestadorPedidos
                     pedidoId, nombreServicio, intento, MaxIntentos);
 
                 var ack = await SocketProtocolo.RecibirMensajeAsync(stream, ctsConexion.Token);
-                if (ack.Tipo != ackEsperado)
+                if (ack.Tipo != ackEsperado || ack.PedidoId != pedidoId)
                     throw new InvalidOperationException($"Respuesta inesperada de {nombreServicio}: {ack.Tipo}");
 
                 _pedidos.ActualizarEstado(pedidoId, estadoIntermedio);
@@ -110,7 +110,7 @@ public class OrquestadorPedidos
                 ctsTarea.CancelAfter(TimeoutTareaCompleta);
                 var resultado = await SocketProtocolo.RecibirMensajeAsync(stream, ctsTarea.Token);
 
-                if (resultado.Tipo != resultadoEsperado)
+                if (resultado.Tipo != resultadoEsperado || resultado.PedidoId != pedidoId)
                     throw new InvalidOperationException($"Resultado inesperado de {nombreServicio}: {resultado.Tipo}");
 
                 _logger.LogInformation("Pedido {Id}: {Servicio} completó su tarea.", pedidoId, nombreServicio);
