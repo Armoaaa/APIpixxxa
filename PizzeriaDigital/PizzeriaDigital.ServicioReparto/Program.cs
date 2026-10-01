@@ -1,9 +1,13 @@
 using System.Net;
 using System.Net.Sockets;
+using PizzeriaDigital.Shared.Configuracion;
 using PizzeriaDigital.Shared.Sockets;
 
-const int Puerto = 6001;
+// El puerto sale de Shared/Configuracion/Puertos.cs (no se cambia acá).
+const int Puerto = Puertos.Reparto;
 
+// Probabilidad de simular un fallo en la entrega. Se puede desactivar
+// ejecutando el programa con el argumento "--sin-fallos".
 double probabilidadDeFallo = args.Contains("--sin-fallos") ? 0.0 : 0.10;
 
 var listener = new TcpListener(IPAddress.Any, Puerto);

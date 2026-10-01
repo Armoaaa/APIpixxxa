@@ -1,10 +1,14 @@
 using PizzeriaDigital.Backend.Repositorios;
 using PizzeriaDigital.Backend.Servicios;
+using PizzeriaDigital.Shared.Configuracion;
 using PizzeriaDigital.Shared.Dtos;
 using PizzeriaDigital.Shared.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ---------- Configuración ----------
+
+// Swagger: la página que documenta la API y permite probarla.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opciones =>
 {
@@ -17,6 +21,8 @@ builder.Services.AddSwaggerGen(opciones =>
     });
 });
 
+// Las clases que guardan los datos y coordinan el pedido.
+// "Singleton" quiere decir: se crea una sola vez y se comparte en todo el programa.
 builder.Services.AddSingleton<PizzaRepository>();
 builder.Services.AddSingleton<ClienteRepository>();
 builder.Services.AddSingleton<PedidoRepository>();
@@ -24,97 +30,98 @@ builder.Services.AddSingleton<OrquestadorPedidos>();
 
 var app = builder.Build();
 
-app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseDefaultFiles();   // al entrar a "/" muestra index.html (el catálogo)
+app.UseStaticFiles();    // sirve las páginas de la carpeta wwwroot (html, css, js)
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pizzería Digital API v1"));
 
 // ---------- GET /api/pizzas ----------
-app.MapGet("/api/pizzas", (PizzaRepository repo) =>
-    Results.Ok(repo.ObtenerTodas()))
-    .WithName("ListarPizzas")
-    .WithSummary("Devuelve el menú de pizzas disponibles.");
+app.MapGet("/api/pizzas", (PizzaRepository pizzas) =>
+{
+    return Results.Ok(pizzas.ObtenerTodas());
+})
+.WithName("ListarPizzas")
+.WithSummary("Devuelve el menú de pizzas disponibles.");
 
 // ---------- POST /api/clientes ----------
-app.MapPost("/api/clientes", (ClienteRequest req, ClienteRepository repo) =>
+app.MapPost("/api/clientes", (ClienteRequest datos, ClienteRepository clientes) =>
 {
-    if (string.IsNullOrWhiteSpace(req.Nombre) || string.IsNullOrWhiteSpace(req.Direccion))
+    if (string.IsNullOrWhiteSpace(datos.Nombre) || string.IsNullOrWhiteSpace(datos.Direccion))
     {
-        return Results.BadRequest(new ErrorResponse(
-            "DatosInvalidos", "Nombre y dirección son obligatorios.", 400));
+        return Rechazar("DatosInvalidos", "Nombre y dirección son obligatorios.");
     }
 
-    var cliente = repo.Crear(req.Nombre, req.Telefono, req.Direccion);
+    var cliente = clientes.Crear(datos.Nombre, datos.Telefono, datos.Direccion);
     return Results.Created($"/api/clientes/{cliente.Id}", cliente);
 })
 .WithName("CrearCliente")
 .WithSummary("Registra un cliente nuevo (sin contraseña).");
 
 // ---------- GET /api/clientes/{id} ----------
-app.MapGet("/api/clientes/{id:int}", (int id, ClienteRepository repo) =>
+app.MapGet("/api/clientes/{id:int}", (int id, ClienteRepository clientes) =>
 {
-    var cliente = repo.Obtener(id);
-    return cliente is null
-        ? Results.NotFound(new ErrorResponse("ClienteNoEncontrado", $"No existe el cliente {id}.", 404))
-        : Results.Ok(cliente);
+    var cliente = clientes.Obtener(id);
+
+    if (cliente == null)
+    {
+        return Results.NotFound(new ErrorResponse("ClienteNoEncontrado", $"No existe el cliente {id}.", 404));
+    }
+
+    return Results.Ok(cliente);
 })
 .WithName("ObtenerCliente");
 
 // ---------- POST /api/pedidos ----------
 app.MapPost("/api/pedidos", (
-    CrearPedidoRequest req,
+    CrearPedidoRequest datos,
     PizzaRepository pizzas,
     ClienteRepository clientes,
     PedidoRepository pedidos,
-    OrquestadorPedidos orquestador,
-    ILogger<Program> logger) =>
+    OrquestadorPedidos orquestador) =>
 {
-    if (clientes.Obtener(req.ClienteId) is null)
+    // 1) Revisamos que los datos del pedido tengan sentido.
+    if (clientes.Obtener(datos.ClienteId) == null)
     {
-        return Results.BadRequest(new ErrorResponse(
-            "ClienteNoEncontrado", $"No existe el cliente {req.ClienteId}.", 400));
+        return Rechazar("ClienteNoEncontrado", $"No existe el cliente {datos.ClienteId}.");
     }
 
-    if (req.Items is null || req.Items.Count == 0)
+    if (datos.Items == null || datos.Items.Count == 0)
     {
-        return Results.BadRequest(new ErrorResponse(
-            "PedidoVacio", "El pedido debe tener al menos una pizza.", 400));
+        return Rechazar("PedidoVacio", "El pedido debe tener al menos una pizza.");
     }
 
+    // 2) Armamos las líneas del pedido (pizza + cantidad + subtotal).
     var items = new List<ItemPedido>();
-    foreach (var itemReq in req.Items)
+    foreach (var itemPedido in datos.Items)
     {
-        var pizza = pizzas.Obtener(itemReq.PizzaId);
-        if (pizza is null)
+        var pizza = pizzas.Obtener(itemPedido.PizzaId);
+
+        if (pizza == null)
         {
-            return Results.BadRequest(new ErrorResponse(
-                "PizzaNoEncontrada", $"La pizza '{itemReq.PizzaId}' no existe en el menú.", 400));
+            return Rechazar("PizzaNoEncontrada", $"La pizza '{itemPedido.PizzaId}' no existe en el menú.");
         }
 
-        if (itemReq.Cantidad <= 0)
+        if (itemPedido.Cantidad <= 0)
         {
-            return Results.BadRequest(new ErrorResponse(
-                "CantidadInvalida", "La cantidad debe ser mayor a 0.", 400));
+            return Rechazar("CantidadInvalida", "La cantidad debe ser mayor a 0.");
         }
 
         items.Add(new ItemPedido
         {
             PizzaId = pizza.Id,
             NombrePizza = pizza.Nombre,
-            Cantidad = itemReq.Cantidad,
-            Subtotal = pizza.Precio * itemReq.Cantidad
+            Cantidad = itemPedido.Cantidad,
+            Subtotal = pizza.Precio * itemPedido.Cantidad
         });
     }
 
-    var pedido = pedidos.Crear(req.ClienteId, items);
-    logger.LogInformation("Pedido {Id} creado para el cliente {ClienteId} (total: {Total})",
-        pedido.Id, req.ClienteId, pedido.Total);
+    // 3) Guardamos el pedido.
+    var pedido = pedidos.Crear(datos.ClienteId, items);
+    Console.WriteLine($"[Backend] Pedido {pedido.Id} creado para el cliente {datos.ClienteId} (total: ${pedido.Total})");
 
-    // Fire-and-forget deliberado: la API responde 201 de inmediato
-    // (el cliente no debería esperar a que termine TODO el ciclo del
-    // pedido para recibir confirmación de que fue registrado).
-    // La orquestación sigue en background y el cliente consulta el
-    // avance con GET /api/pedidos/{id}.
+    // 4) Mandamos el pedido a Cocina y Reparto SIN esperar a que terminen
+    //    (por eso no hay "await"). Así el cliente recibe la confirmación enseguida
+    //    y después consulta cómo va con GET /api/pedidos/{id}.
     _ = orquestador.ProcesarPedidoAsync(pedido.Id);
 
     return Results.Created($"/api/pedidos/{pedido.Id}", pedido);
@@ -126,11 +133,31 @@ app.MapPost("/api/pedidos", (
 app.MapGet("/api/pedidos/{id:int}", (int id, PedidoRepository pedidos) =>
 {
     var pedido = pedidos.Obtener(id);
-    return pedido is null
-        ? Results.NotFound(new ErrorResponse("PedidoNoEncontrado", $"No existe el pedido {id}.", 404))
-        : Results.Ok(pedido);
+
+    if (pedido == null)
+    {
+        return Results.NotFound(new ErrorResponse("PedidoNoEncontrado", $"No existe el pedido {id}.", 404));
+    }
+
+    return Results.Ok(pedido);
 })
 .WithName("ObtenerPedido")
 .WithSummary("Consulta el estado actual de un pedido.");
 
-app.Run("http://localhost:5000");
+// ---------- Arranque ----------
+Console.WriteLine("======================================");
+Console.WriteLine(" 🍕 Pizzería Digital - BACKEND");
+Console.WriteLine($" Web:     {Puertos.UrlBackend}");
+Console.WriteLine($" Swagger: {Puertos.UrlSwagger}");
+Console.WriteLine("======================================");
+
+// El puerto sale de Shared/Configuracion/Puertos.cs
+app.Run(Puertos.UrlBackend);
+
+// ---------- Función auxiliar ----------
+
+// Devuelve un error 400 con el formato estándar de la API.
+static IResult Rechazar(string error, string mensaje)
+{
+    return Results.BadRequest(new ErrorResponse(error, mensaje, 400));
+}

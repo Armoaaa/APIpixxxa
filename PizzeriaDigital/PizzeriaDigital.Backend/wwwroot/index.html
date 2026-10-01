@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pizzeria Digital | Pedidos en movimiento</title>
-  <meta name="description" content="Menu, pedidos y seguimiento de Pizzeria Digital.">
+  <title>Pizzeria Digital | Catalogo</title>
+  <meta name="description" content="Elegí tu pizza en el catálogo de Pizzeria Digital.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -12,19 +12,18 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#inicio" aria-label="Pizzeria Digital, inicio">
+    <a class="brand" href="index.html" aria-label="Pizzeria Digital, inicio">
       <span class="brand-mark">PD</span>
       <span>Pizzeria <b>Digital</b></span>
     </a>
     <nav aria-label="Navegacion principal">
-      <a href="#menu">Menu</a>
-      <a href="#pedido">Armar pedido</a>
-      <a href="#seguimiento">Seguimiento</a>
+      <a href="index.html" aria-current="page">Catalogo</a>
+      <a href="pedido.html">Mi pedido <span id="nav-cantidad" class="nav-cantidad" hidden>0</span></a>
       <a href="/swagger" target="_blank" rel="noreferrer">API Swagger <span class="arrow">↗</span></a>
     </nav>
   </header>
 
-  <main id="inicio">
+  <main>
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow"><span class="pulse"></span> Cocina conectada en tiempo real</p>
@@ -32,7 +31,7 @@
         <p class="hero-text">Elegis. Confirmamos. Cocinamos. Te la llevamos. Una experiencia simple respaldada por una arquitectura distribuida.</p>
         <div class="hero-actions">
           <a class="button button-primary" href="#menu">Ver el menu <span>↓</span></a>
-          <a class="text-link" href="#pedido">Ya se que quiero <span>→</span></a>
+          <a class="text-link" href="pedido.html">Ya se que quiero <span>→</span></a>
         </div>
       </div>
       <div class="hero-visual" aria-label="Pizza recien horneada">
@@ -50,43 +49,26 @@
     </section>
 
     <section id="menu" class="section menu-section">
-      <div class="section-heading"><div><p class="eyebrow">01 / El menu</p><h2>Elegí tu proxima<br><em>favorita.</em></h2></div><p class="section-aside">Ingredientes simples,<br>decisiones dificiles.</p></div>
-      <div id="menu-grid" class="menu-grid" aria-live="polite"><div class="loading">Cargando el menu...</div></div>
-    </section>
-
-    <section id="pedido" class="section order-section">
-      <div class="section-heading"><div><p class="eyebrow">02 / Tu pedido</p><h2>Del menu<br><em>a tu puerta.</em></h2></div><p class="section-aside">Completa tus datos,<br>armamos el resto.</p></div>
-      <div class="order-layout">
-        <form id="customer-form" class="panel form-panel">
-          <div class="panel-title"><span class="step">1</span><div><h3>Tus datos</h3><p>Para saber donde llega.</p></div></div>
-          <label>Nombre<input id="customer-name" required maxlength="80" placeholder="Como te llamamos?"></label>
-          <label>Telefono <span class="optional">opcional</span><input id="customer-phone" maxlength="30" placeholder="11 5555 0000"></label>
-          <label>Direccion<input id="customer-address" required maxlength="160" placeholder="Calle, numero y localidad"></label>
-          <button class="button button-dark" type="submit">Guardar datos <span>→</span></button>
-          <p id="customer-result" class="form-result" role="status"></p>
-        </form>
-        <div class="panel cart-panel">
-          <div class="panel-title"><span class="step">2</span><div><h3>Tu seleccion</h3><p>Elegí desde el menu.</p></div><span id="cart-count" class="cart-count">0</span></div>
-          <div id="cart-items" class="cart-items"><p class="empty-state">Todavia no agregaste pizzas.<br><a href="#menu">Volver al menu →</a></p></div>
-          <div class="cart-total"><span>Total estimado</span><strong id="cart-total">$0</strong></div>
-          <button id="place-order" class="button button-primary full" type="button" disabled>Confirmar pedido <span>→</span></button>
-          <p id="order-result" class="form-result" role="status"></p>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Paso 1 de 2 / El catalogo</p>
+          <h2>Elegí tu proxima<br><em>favorita.</em></h2>
         </div>
+        <p class="section-aside">Toca el + para sumarla.<br>El pedido se arma en el paso 2.</p>
       </div>
-    </section>
-
-    <section id="seguimiento" class="section tracking-section">
-      <div class="tracking-copy"><p class="eyebrow">03 / Seguimiento</p><h2>Siempre sabés<br><em>donde esta.</em></h2><p>El pedido se mueve desde la confirmacion hasta la entrega. Ingresa un numero y consulta su estado en vivo.</p></div>
-      <div class="panel tracking-panel">
-        <div class="panel-title"><div><h3>Consultar pedido</h3><p>Usa el numero que recibiste al confirmar.</p></div></div>
-        <form id="track-form" class="inline-form"><input id="track-id" type="number" min="1" required placeholder="Numero de pedido"><button class="button button-dark" type="submit">Consultar <span>→</span></button></form>
-        <div id="tracking-result" class="tracking-result"><span class="tracking-icon">◎</span><span>Tu estado aparecera aqui.</span></div>
-      </div>
-      <div class="panel lookup-panel"><div class="panel-title"><div><h3>Consultar cliente</h3><p>Recupera los datos por su numero.</p></div></div><form id="client-lookup-form" class="inline-form"><input id="client-id" type="number" min="1" required placeholder="Numero de cliente"><button class="button button-light" type="submit">Buscar <span>→</span></button></form><div id="client-result" class="form-result" role="status"></div></div>
+      <div id="grilla-menu" class="menu-grid" aria-live="polite"><div class="loading">Cargando el menu...</div></div>
     </section>
   </main>
 
+  <!-- Barra fija: aparece cuando ya agregaste al menos una pizza -->
+  <div id="barra-carrito" class="cart-bar" hidden>
+    <span id="barra-texto">0 pizzas en tu pedido</span>
+    <a href="pedido.html">Ir a mi pedido →</a>
+  </div>
+
   <footer><div class="brand"><span class="brand-mark">PD</span><span>Pizzeria <b>Digital</b></span></div><span>Hecho para comerlo caliente.</span><a href="/swagger" target="_blank" rel="noreferrer">Ver documentacion API ↗</a></footer>
-  <script src="/app.js"></script>
+
+  <script src="/comun.js"></script>
+  <script src="/catalogo.js"></script>
 </body>
 </html>

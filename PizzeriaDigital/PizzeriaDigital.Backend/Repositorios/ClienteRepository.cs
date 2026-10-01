@@ -1,27 +1,44 @@
-using System.Collections.Concurrent;
 using PizzeriaDigital.Shared.Models;
 
 namespace PizzeriaDigital.Backend.Repositorios;
 
-/// <summary>Repositorio en memoria de clientes (thread-safe).</summary>
+/// <summary>
+/// Guarda los clientes en memoria (se pierden al apagar el programa).
+/// El "lock" hace que solo una tarea a la vez toque los datos,
+/// así no se mezclan si llegan dos pedidos al mismo tiempo.
+/// </summary>
 public class ClienteRepository
 {
-    private readonly ConcurrentDictionary<int, Cliente> _clientes = new();
-    private int _siguienteId;
+    private readonly Dictionary<int, Cliente> _clientes = new Dictionary<int, Cliente>();
+    private readonly object _candado = new object();
+    private int _ultimoId = 0;
 
     public Cliente Crear(string nombre, string? telefono, string direccion)
     {
-        var cliente = new Cliente
+        lock (_candado)
         {
-            Id = Interlocked.Increment(ref _siguienteId),
-            Nombre = nombre,
-            Telefono = telefono ?? string.Empty,
-            Direccion = direccion
-        };
+            _ultimoId++;
 
-        _clientes[cliente.Id] = cliente;
-        return cliente;
+            var cliente = new Cliente
+            {
+                Id = _ultimoId,
+                Nombre = nombre,
+                Telefono = telefono ?? string.Empty,
+                Direccion = direccion
+            };
+
+            _clientes[cliente.Id] = cliente;
+            return cliente;
+        }
     }
 
-    public Cliente? Obtener(int id) => _clientes.GetValueOrDefault(id);
+    // Devuelve el cliente, o null si no existe.
+    public Cliente? Obtener(int id)
+    {
+        lock (_candado)
+        {
+            _clientes.TryGetValue(id, out var cliente);
+            return cliente;
+        }
+    }
 }

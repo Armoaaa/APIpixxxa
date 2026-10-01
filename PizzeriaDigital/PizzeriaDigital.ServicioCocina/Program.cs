@@ -1,12 +1,14 @@
 using System.Net;
 using System.Net.Sockets;
+using PizzeriaDigital.Shared.Configuracion;
 using PizzeriaDigital.Shared.Sockets;
 
-const int Puerto = 6000;
+// El puerto sale de Shared/Configuracion/Puertos.cs (no se cambia acá).
+const int Puerto = Puertos.Cocina;
 
 // Probabilidad de simular un fallo interno (para poder ver en acción
-// los reintidos con backoff que implementa el Backend). Se puede
-// desactivar totalmente pasando "--sin-fallos" como argumento.
+// los reintentos que hace el Backend). Se puede desactivar totalmente
+// ejecutando el programa con el argumento "--sin-fallos".
 double probabilidadDeFallo = args.Contains("--sin-fallos") ? 0.0 : 0.15;
 
 var listener = new TcpListener(IPAddress.Any, Puerto);
@@ -33,8 +35,8 @@ while (true)
         continue;
     }
 
-    // Cada pedido se procesa en su propia tarea, para poder atender
-    // varias preparaciones "en simultáneo" sin bloquear el listener.
+    // Cada pedido se procesa por su cuenta (sin "await"), para poder
+    // preparar varios a la vez sin bloquear la espera de nuevos pedidos.
     _ = ManejarPedidoAsync(clienteConectado, random, probabilidadDeFallo);
 }
 
@@ -59,8 +61,8 @@ static async Task ManejarPedidoAsync(TcpClient clienteConectado, Random random, 
             await SocketProtocolo.EnviarMensajeAsync(stream, new MensajeSocket(TipoMensaje.AckPreparacion, pedidoId));
 
             // Simulación de un fallo interno (ej: se rompió el horno).
-            // Cerramos la conexión sin responder -> del lado del Backend
-            // esto se ve como un timeout, y dispara sus reintentos.
+            // Cerramos la conexión sin responder: el Backend lo ve como un
+            // problema de conexión y vuelve a intentar.
             if (random.NextDouble() < probabilidadDeFallo)
             {
                 Console.WriteLine($"[Cocina] ⚠️  Fallo simulado preparando el pedido {pedidoId} (se corta la conexión).");

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pizzeria Digital | Mi pedido</title>
+  <meta name="description" content="Confirmá tu pedido y seguilo hasta tu puerta.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Pizzeria Digital, inicio">
+      <span class="brand-mark">PD</span>
+      <span>Pizzeria <b>Digital</b></span>
+    </a>
+    <nav aria-label="Navegacion principal">
+      <a href="index.html">Catalogo</a>
+      <a href="pedido.html" aria-current="page">Mi pedido <span id="nav-cantidad" class="nav-cantidad" hidden>0</span></a>
+      <a href="/swagger" target="_blank" rel="noreferrer">API Swagger <span class="arrow">↗</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Datos del cliente + pizzas elegidas + confirmar -->
+    <section id="pedido" class="section order-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Paso 2 de 2 / Tu pedido</p>
+          <h2>Del menu<br><em>a tu puerta.</em></h2>
+        </div>
+        <p class="section-aside">Completa tus datos,<br>armamos el resto.</p>
+      </div>
+
+      <div class="order-layout">
+        <form id="formulario-cliente" class="panel form-panel">
+          <div class="panel-title"><span class="step">1</span><div><h3>Tus datos</h3><p>Para saber donde llega.</p></div></div>
+          <label>Nombre<input id="cliente-nombre" required maxlength="80" placeholder="Como te llamamos?"></label>
+          <label>Telefono <span class="optional">opcional</span><input id="cliente-telefono" maxlength="30" placeholder="11 5555 0000"></label>
+          <label>Direccion<input id="cliente-direccion" required maxlength="160" placeholder="Calle, numero y localidad"></label>
+          <button class="button button-dark" type="submit">Guardar datos <span>→</span></button>
+          <p id="resultado-cliente" class="form-result" role="status"></p>
+        </form>
+
+        <div class="panel cart-panel">
+          <div class="panel-title"><span class="step">2</span><div><h3>Tu seleccion</h3><p>Las pizzas que elegiste en el catalogo.</p></div><span id="contador-carrito" class="cart-count">0</span></div>
+          <div id="items-carrito" class="cart-items"></div>
+          <div class="cart-total"><span>Total estimado</span><strong id="total-carrito">$0</strong></div>
+          <button id="boton-confirmar" class="button button-primary full" type="button" disabled>Confirmar pedido <span>→</span></button>
+          <p id="resultado-pedido" class="form-result" role="status"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seguimiento del pedido y búsqueda de clientes -->
+    <section id="seguimiento" class="section tracking-section">
+      <div class="tracking-copy">
+        <p class="eyebrow">Seguimiento</p>
+        <h2>Siempre sabés<br><em>donde esta.</em></h2>
+        <p>El pedido se mueve desde la confirmacion hasta la entrega. Ingresa un numero y consulta su estado.</p>
+      </div>
+
+      <div class="panel tracking-panel">
+        <div class="panel-title"><div><h3>Consultar pedido</h3><p>Usa el numero que recibiste al confirmar.</p></div></div>
+        <form id="formulario-seguimiento" class="inline-form">
+          <input id="numero-pedido" type="number" min="1" required placeholder="Numero de pedido">
+          <button class="button button-dark" type="submit">Consultar <span>→</span></button>
+        </form>
+        <div id="resultado-seguimiento" class="tracking-result"><span class="tracking-icon">◎</span><span>Tu estado aparecera aqui.</span></div>
+      </div>
+
+      <div class="panel lookup-panel">
+        <div class="panel-title"><div><h3>Consultar cliente</h3><p>Recupera los datos por su numero.</p></div></div>
+        <form id="formulario-buscar-cliente" class="inline-form">
+          <input id="numero-cliente" type="number" min="1" required placeholder="Numero de cliente">
+          <button class="button button-light" type="submit">Buscar <span>→</span></button>
+        </form>
+        <div id="resultado-buscar-cliente" class="form-result" role="status"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="brand"><span class="brand-mark">PD</span><span>Pizzeria <b>Digital</b></span></div><span>Hecho para comerlo caliente.</span><a href="/swagger" target="_blank" rel="noreferrer">Ver documentacion API ↗</a></footer>
+
+  <script src="/comun.js"></script>
+  <script src="/pedido.js"></script>
+</body>
+</html>

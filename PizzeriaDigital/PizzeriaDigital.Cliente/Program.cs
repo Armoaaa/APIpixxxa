@@ -1,14 +1,16 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using PizzeriaDigital.Shared.Configuracion;
 using PizzeriaDigital.Shared.Dtos;
 using PizzeriaDigital.Shared.Models;
 
-const string BaseUrl = "http://localhost:5000";
+// La dirección del Backend sale de Shared/Configuracion/Puertos.cs (no se cambia acá).
+string baseUrl = Puertos.UrlBackend;
 var jsonOpciones = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 bool modoDemo = args.Contains("--demo");
 
-using var http = new HttpClient { BaseAddress = new Uri(BaseUrl), Timeout = TimeSpan.FromSeconds(10) };
+using var http = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(10) };
 
 Console.WriteLine("=======================================");
 Console.WriteLine(" 🍕 Bienvenido a la Pizzería Digital");

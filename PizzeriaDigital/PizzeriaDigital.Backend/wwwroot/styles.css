@@ -57,3 +57,33 @@ footer { align-items: center; background: var(--ink); color: #e6e0d5; display: f
 .loading { color: var(--muted); grid-column: 1 / -1; padding: 30px 0; }
 @media (max-width: 900px) { .hero { grid-template-columns: 1fr; }.hero:after { inset: 48% 0 0; opacity: .34; }.hero-copy { padding: 70px 34px 30px; }.hero-visual { min-height: 330px; }.pizza-art { height: 220px; transform: translate(-50%, -48%) rotate(-17deg); width: 220px; }.visual-note { transform: scale(.85); }.note-top { right: 6%; top: 3%; }.note-bottom { bottom: 4%; left: 5%; }.menu-grid { grid-template-columns: repeat(3, 1fr); }.tracking-section { grid-template-columns: 1fr; }.tracking-panel, .lookup-panel { grid-column: 1; } }
 @media (max-width: 620px) { .topbar { padding: 20px; }.topbar nav { display: none; }.hero { margin: 0; }.hero-copy { padding: 70px 24px 20px; }.hero-visual { min-height: 290px; }.metrics { grid-template-columns: repeat(2, 1fr); padding: 28px 24px; }.metric-status { border-left: 0; justify-content: start; }.section { padding: 70px 20px; }.section-heading { align-items: flex-start; flex-direction: column; gap: 20px; }.section-aside { text-align: left; }.menu-grid { grid-template-columns: repeat(2, 1fr); }.order-layout { grid-template-columns: 1fr; }.panel { padding: 23px 18px; }.tracking-section { padding-top: 40px; }.inline-form { flex-direction: column; }.inline-form .button { width: 100%; }.cart-row { grid-template-columns: 1fr auto; }.cart-row > strong { grid-column: 1 / -1; }.cart-actions { grid-column: 2; grid-row: 1; } footer { align-items: flex-start; flex-direction: column; gap: 15px; padding: 25px 20px; } }
+
+/* =====================================================
+   Agregado: separación en dos páginas (catálogo y pedido)
+   ===================================================== */
+
+/* Link de la página actual en el menú de arriba */
+nav a[aria-current="page"] { color: var(--tomato); }
+
+/* Numerito de pizzas en el link "Mi pedido" */
+.nav-cantidad { background: var(--ink); border-radius: 999px; color: white; font-size: 10px; margin-left: 6px; padding: 2px 7px; }
+
+/* Botón "+" del catálogo cuando la pizza se acaba de agregar */
+.add-button.agregado { background: var(--tomato); }
+
+/* Barra fija de abajo en el catálogo: "N pizzas en tu pedido  [Ir a mi pedido]" */
+.cart-bar { align-items: center; background: var(--ink); bottom: 18px; box-shadow: var(--shadow); color: white; display: flex; font-size: 13px; gap: 22px; justify-content: space-between; left: 50%; max-width: 520px; padding: 12px 12px 12px 20px; position: fixed; transform: translateX(-50%); width: calc(100% - 36px); z-index: 10; }
+.cart-bar[hidden] { display: none; }
+.cart-bar a { background: var(--tomato); font-weight: 700; padding: 11px 15px; transition: background .2s; }
+.cart-bar a:hover { background: var(--tomato-dark); }
+
+/* Mensajes de los formularios: rojo por defecto (error), verde si salió bien */
+.form-result.ok { color: #52735a; }
+
+/* Caja de seguimiento cuando el pedido tuvo un problema */
+.tracking-result.con-problema { background: #f4d5cb; }
+
+/* Texto de ayuda dentro del carrito vacío */
+.empty-state a { text-decoration: underline; }
+
+@media (max-width: 620px) { .cart-bar { bottom: 12px; gap: 12px; padding-left: 16px; } }

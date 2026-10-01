@@ -1,6 +1,6 @@
 # Pizzería Digital Distribuida — Etapa 3 (implementación)
 
-Solución .NET 8 con **5 proyectos**:
+Solución .NET 10 con **5 proyectos**:
 
 | Proyecto | Tipo | Rol |
 |---|---|---|
@@ -14,7 +14,7 @@ Corresponde a los diagramas y al contrato de endpoints definidos en la Etapa 1 y
 
 ## Requisitos
 
-- [.NET SDK 8.0](https://dotnet.microsoft.com/download) o superior instalado.
+- [.NET SDK 10.0](https://dotnet.microsoft.com/download) instalado.
 - Conexión a internet la **primera vez** que se restauren paquetes (Swashbuckle para Swagger y System.Net.Http.Json), ya que no vienen con el SDK.
 
 ## Cómo correrlo (4 terminales, en este orden)
