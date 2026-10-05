@@ -1,47 +1,103 @@
+using MySqlConnector;
 using PizzeriaDigital.Shared.Models;
+using System.Data;
 
 namespace PizzeriaDigital.Backend.Repositorios;
 
-/// <summary>
-/// El menú de la pizzería, guardado en memoria.
-/// Cada pizza tiene un Id fijo para poder referenciarla desde un pedido.
-/// </summary>
 public class PizzaRepository
 {
-    private readonly List<Pizza> _pizzas = new List<Pizza>
+    private readonly string _connectionString;
+
+    public PizzaRepository(IConfiguration configuration)
     {
-        new Pizza { Id = 1, Nombre = "Muzzarella", Tamano = "Grande", Precio = 8500m,
-                    Ingredientes = new List<string> { "Muzzarella", "Salsa de tomate", "Orégano" } },
-
-        new Pizza { Id = 2, Nombre = "Napolitana", Tamano = "Grande", Precio = 9800m,
-                    Ingredientes = new List<string> { "Muzzarella", "Tomate", "Ajo", "Orégano" } },
-
-        new Pizza { Id = 3, Nombre = "Fugazzeta", Tamano = "Grande", Precio = 9500m,
-                    Ingredientes = new List<string> { "Muzzarella", "Cebolla" } },
-
-        new Pizza { Id = 4, Nombre = "Especial", Tamano = "Grande", Precio = 11200m,
-                    Ingredientes = new List<string> { "Muzzarella", "Jamón", "Morrones", "Aceitunas" } },
-
-        new Pizza { Id = 5, Nombre = "Cuatro Quesos", Tamano = "Mediana", Precio = 9900m,
-                    Ingredientes = new List<string> { "Muzzarella", "Provolone", "Roquefort", "Parmesano" } },
-    };
-
-    public List<Pizza> ObtenerTodas()
-    {
-        return _pizzas;
+        _connectionString = configuration.GetConnectionString("PizzeriaDigital")
+            ?? throw new InvalidOperationException(
+                "No se encontró la cadena de conexión PizzeriaDigital.");
     }
 
-    // Devuelve la pizza con ese Id, o null si no existe.
-    public Pizza? Obtener(int id)
+    public async Task<List<Pizza>> ObtenerTodas()
     {
-        foreach (var pizza in _pizzas)
+        List<Pizza> pizzas = new List<Pizza>();
+
+        await using MySqlConnection conexion = new MySqlConnection(_connectionString);
+        await conexion.OpenAsync();
+
+        await using MySqlCommand comando = new MySqlCommand(
+            "ObtenerTodas",
+            conexion);
+
+        comando.CommandType = CommandType.StoredProcedure;
+
+        await using MySqlDataReader reader = await comando.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
         {
-            if (pizza.Id == id)
+            List<string> ingredientes = new List<string>();
+
+            string ingredientesTexto = reader.GetString("Ingredientes");
+
+            if (!string.IsNullOrWhiteSpace(ingredientesTexto))
             {
-                return pizza;
+                string[] ingredientesSeparados =
+                    ingredientesTexto.Split(", ");
+
+                ingredientes.AddRange(ingredientesSeparados);
             }
+
+            Pizza pizza = new Pizza
+            {
+                Id = reader.GetInt32("Id"),
+                Nombre = reader.GetString("Nombre"),
+                Tamano = reader.GetString("Tamano"),
+                Precio = reader.GetDecimal("Precio"),
+                Ingredientes = ingredientes
+            };
+
+            pizzas.Add(pizza);
         }
 
-        return null;
+        return pizzas;
+    }
+
+    public async Task<Pizza?> Obtener(int id)
+    {
+        await using MySqlConnection conexion = new MySqlConnection(_connectionString);
+        await conexion.OpenAsync();
+
+        await using MySqlCommand comando = new MySqlCommand(
+            "ObtenerPizza",
+            conexion);
+
+        comando.CommandType = CommandType.StoredProcedure;
+
+        comando.Parameters.AddWithValue("@p_Id", id);
+
+        await using MySqlDataReader reader = await comando.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+        {
+            return null;
+        }
+
+        List<string> ingredientes = new List<string>();
+
+        string ingredientesTexto = reader.GetString("Ingredientes");
+
+        if (!string.IsNullOrWhiteSpace(ingredientesTexto))
+        {
+            string[] ingredientesSeparados =
+                ingredientesTexto.Split(", ");
+
+            ingredientes.AddRange(ingredientesSeparados);
+        }
+
+        return new Pizza
+        {
+            Id = reader.GetInt32("Id"),
+            Nombre = reader.GetString("Nombre"),
+            Tamano = reader.GetString("Tamano"),
+            Precio = reader.GetDecimal("Precio"),
+            Ingredientes = ingredientes
+        };
     }
 }

@@ -1,44 +1,79 @@
+using MySqlConnector;
 using PizzeriaDigital.Shared.Models;
+using System.Data;
 
 namespace PizzeriaDigital.Backend.Repositorios;
 
-/// <summary>
-/// Guarda los clientes en memoria (se pierden al apagar el programa).
-/// El "lock" hace que solo una tarea a la vez toque los datos,
-/// así no se mezclan si llegan dos pedidos al mismo tiempo.
-/// </summary>
 public class ClienteRepository
 {
-    private readonly Dictionary<int, Cliente> _clientes = new Dictionary<int, Cliente>();
-    private readonly object _candado = new object();
-    private int _ultimoId = 0;
+    private readonly string _connectionString;
 
-    public Cliente Crear(string nombre, string? telefono, string direccion)
+    public ClienteRepository(IConfiguration configuration)
     {
-        lock (_candado)
-        {
-            _ultimoId++;
-
-            var cliente = new Cliente
-            {
-                Id = _ultimoId,
-                Nombre = nombre,
-                Telefono = telefono ?? string.Empty,
-                Direccion = direccion
-            };
-
-            _clientes[cliente.Id] = cliente;
-            return cliente;
-        }
+        _connectionString = configuration.GetConnectionString("PizzeriaDigital")
+            ?? throw new InvalidOperationException(
+                "No se encontró la cadena de conexión PizzeriaDigital.");
     }
 
-    // Devuelve el cliente, o null si no existe.
-    public Cliente? Obtener(int id)
+    public async Task<Cliente> Crear(string nombre, string? telefono, string direccion)
     {
-        lock (_candado)
+        await using MySqlConnection conexion = new MySqlConnection(_connectionString);
+        await conexion.OpenAsync();
+
+        await using MySqlCommand comando = new MySqlCommand(
+            "CrearCliente",
+            conexion);
+
+        comando.CommandType = CommandType.StoredProcedure;
+
+        comando.Parameters.AddWithValue("@p_Nombre", nombre);
+        comando.Parameters.AddWithValue(
+            "@p_Telefono",
+            telefono ?? string.Empty);
+        comando.Parameters.AddWithValue("@p_Direccion", direccion);
+
+        await using MySqlDataReader reader = await comando.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
         {
-            _clientes.TryGetValue(id, out var cliente);
-            return cliente;
+            throw new Exception("No se pudo crear el cliente.");
         }
+
+        return new Cliente
+        {
+            Id = reader.GetInt32("Id"),
+            Nombre = reader.GetString("Nombre"),
+            Telefono = reader.GetString("Telefono"),
+            Direccion = reader.GetString("Direccion")
+        };
+    }
+
+    public async Task<Cliente?> Obtener(int id)
+    {
+        await using MySqlConnection conexion = new MySqlConnection(_connectionString);
+        await conexion.OpenAsync();
+
+        await using MySqlCommand comando = new MySqlCommand(
+            "ObtenerCliente",
+            conexion);
+
+        comando.CommandType = CommandType.StoredProcedure;
+
+        comando.Parameters.AddWithValue("@p_Id", id);
+
+        await using MySqlDataReader reader = await comando.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+        {
+            return null;
+        }
+
+        return new Cliente
+        {
+            Id = reader.GetInt32("Id"),
+            Nombre = reader.GetString("Nombre"),
+            Telefono = reader.GetString("Telefono"),
+            Direccion = reader.GetString("Direccion")
+        };
     }
 }

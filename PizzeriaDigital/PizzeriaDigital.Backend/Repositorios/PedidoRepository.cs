@@ -1,71 +1,171 @@
+using MySqlConnector;
 using PizzeriaDigital.Shared.Models;
+using System.Data;
+using System.Text.Json;
 
 namespace PizzeriaDigital.Backend.Repositorios;
 
-/// <summary>
-/// Guarda los pedidos en memoria (se pierden al apagar el programa).
-/// El "lock" hace que solo una tarea a la vez toque los datos: así no se
-/// pisan, por ejemplo, cuando alguien consulta un pedido justo mientras
-/// el orquestador le está cambiando el estado.
-/// </summary>
 public class PedidoRepository
 {
-    private readonly Dictionary<int, Pedido> _pedidos = new Dictionary<int, Pedido>();
-    private readonly object _candado = new object();
-    private int _ultimoId = 0;
+    private readonly string _connectionString;
 
-    public Pedido Crear(int clienteId, List<ItemPedido> items)
+    public PedidoRepository(IConfiguration configuration)
     {
-        lock (_candado)
-        {
-            _ultimoId++;
+        _connectionString = configuration.GetConnectionString("PizzeriaDigital")
+            ?? throw new InvalidOperationException(
+                "No se encontró la cadena de conexión PizzeriaDigital.");
+    }
 
-            var pedido = new Pedido
+    public async Task<Pedido> Crear(
+        int clienteId,
+        List<ItemPedido> items)
+    {
+        await using MySqlConnection conexion = new MySqlConnection(_connectionString);
+        await conexion.OpenAsync();
+
+        await using MySqlCommand comando = new MySqlCommand(
+            "CrearPedido",
+            conexion);
+
+        comando.CommandType = CommandType.StoredProcedure;
+
+        comando.Parameters.AddWithValue("@p_ClienteId", clienteId);
+
+        string itemsJson = JsonSerializer.Serialize(
+            items.Select(item => new
             {
-                Id = _ultimoId,
-                ClienteId = clienteId,
-                Items = items,
-                FechaCreacion = DateTime.UtcNow,
-                Estado = EstadoPedido.EsperaConfirmacion
+                item.PizzaId,
+                item.Cantidad
+            }));
+
+        comando.Parameters.AddWithValue("@p_Items", itemsJson);
+
+        await using MySqlDataReader reader = await comando.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+        {
+            throw new Exception("No se pudo crear el pedido.");
+        }
+
+        Pedido pedido = new Pedido
+        {
+            Id = reader.GetInt32("Id"),
+            ClienteId = reader.GetInt32("ClienteId"),
+            FechaCreacion = reader.GetDateTime("FechaCreacion"),
+            Estado = (EstadoPedido)reader.GetInt32("Estado"),
+            ConError = reader.GetBoolean("ConError"),
+            UltimoError = reader.IsDBNull("UltimoError")
+                ? null
+                : reader.GetString("UltimoError"),
+            Items = new List<ItemPedido>()
+        };
+
+        await reader.NextResultAsync();
+
+        while (await reader.ReadAsync())
+        {
+            ItemPedido item = new ItemPedido
+            {
+                PizzaId = reader.GetInt32("PizzaId"),
+                NombrePizza = reader.GetString("NombrePizza"),
+                Cantidad = reader.GetInt32("Cantidad"),
+                Subtotal = reader.GetDecimal("Subtotal")
             };
 
-            _pedidos[pedido.Id] = pedido;
-            return pedido;
+            pedido.Items.Add(item);
         }
+
+        return pedido;
     }
 
-    // Devuelve el pedido, o null si no existe.
-    public Pedido? Obtener(int id)
+    public async Task<Pedido?> Obtener(int id)
     {
-        lock (_candado)
-        {
-            _pedidos.TryGetValue(id, out var pedido);
-            return pedido;
-        }
-    }
+        await using MySqlConnection conexion = new MySqlConnection(_connectionString);
+        await conexion.OpenAsync();
 
-    public void ActualizarEstado(int id, EstadoPedido nuevoEstado)
-    {
-        lock (_candado)
+        await using MySqlCommand comando = new MySqlCommand(
+            "ObtenerPedido",
+            conexion);
+
+        comando.CommandType = CommandType.StoredProcedure;
+
+        comando.Parameters.AddWithValue("@p_Id", id);
+
+        await using MySqlDataReader reader = await comando.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
         {
-            if (_pedidos.TryGetValue(id, out var pedido))
+            return null;
+        }
+
+        Pedido pedido = new Pedido
+        {
+            Id = reader.GetInt32("Id"),
+            ClienteId = reader.GetInt32("ClienteId"),
+            FechaCreacion = reader.GetDateTime("FechaCreacion"),
+            Estado = (EstadoPedido)reader.GetInt32("Estado"),
+            ConError = reader.GetBoolean("ConError"),
+            UltimoError = reader.IsDBNull("UltimoError")
+                ? null
+                : reader.GetString("UltimoError"),
+            Items = new List<ItemPedido>()
+        };
+
+        await reader.NextResultAsync();
+
+        while (await reader.ReadAsync())
+        {
+            ItemPedido item = new ItemPedido
             {
-                pedido.Estado = nuevoEstado;
-                pedido.ConError = false;
-                pedido.UltimoError = null;
-            }
+                PizzaId = reader.GetInt32("PizzaId"),
+                NombrePizza = reader.GetString("NombrePizza"),
+                Cantidad = reader.GetInt32("Cantidad"),
+                Subtotal = reader.GetDecimal("Subtotal")
+            };
+
+            pedido.Items.Add(item);
         }
+
+        return pedido;
     }
 
-    public void MarcarError(int id, string mensaje)
+    public async Task ActualizarEstado(
+        int id,
+        EstadoPedido nuevoEstado)
     {
-        lock (_candado)
-        {
-            if (_pedidos.TryGetValue(id, out var pedido))
-            {
-                pedido.ConError = true;
-                pedido.UltimoError = mensaje;
-            }
-        }
+        await using MySqlConnection conexion = new MySqlConnection(_connectionString);
+        await conexion.OpenAsync();
+
+        await using MySqlCommand comando = new MySqlCommand(
+            "ActualizarEstado",
+            conexion);
+
+        comando.CommandType = CommandType.StoredProcedure;
+
+        comando.Parameters.AddWithValue("@p_Id", id);
+        comando.Parameters.AddWithValue(
+            "@p_NuevoEstado",
+            (int)nuevoEstado);
+
+        await comando.ExecuteNonQueryAsync();
+    }
+
+    public async Task MarcarError(
+        int id,
+        string mensaje)
+    {
+        await using MySqlConnection conexion = new MySqlConnection(_connectionString);
+        await conexion.OpenAsync();
+
+        await using MySqlCommand comando = new MySqlCommand(
+            "MarcarError",
+            conexion);
+
+        comando.CommandType = CommandType.StoredProcedure;
+
+        comando.Parameters.AddWithValue("@p_Id", id);
+        comando.Parameters.AddWithValue("@p_Mensaje", mensaje);
+
+        await comando.ExecuteNonQueryAsync();
     }
 }
