@@ -5,7 +5,7 @@ using PizzeriaDigital.Shared.Models;
 namespace PizzeriaDigital.Backend.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/pizzas")]
 public class PizzaController : ControllerBase
 {
     private readonly PizzaRepository _pizzaRepository;
@@ -18,8 +18,7 @@ public class PizzaController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<Pizza>>> ObtenerTodas()
     {
-        List<Pizza> pizzas =
-            await _pizzaRepository.ObtenerTodas();
+        List<Pizza> pizzas = await _pizzaRepository.ObtenerTodas();
 
         return Ok(pizzas);
     }
@@ -27,13 +26,11 @@ public class PizzaController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Pizza>> Obtener(int id)
     {
-        Pizza? pizza =
-            await _pizzaRepository.Obtener(id);
+        Pizza? pizza = await _pizzaRepository.Obtener(id);
 
         if (pizza == null)
         {
-            return NotFound(
-                $"No existe la pizza con ID {id}.");
+            return NotFound();
         }
 
         return Ok(pizza);

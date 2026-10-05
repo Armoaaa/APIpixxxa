@@ -34,11 +34,17 @@ app.UseStaticFiles();
 app.UseSwagger();
 
 app.UseSwaggerUI(c =>
+{
     c.SwaggerEndpoint(
         "/swagger/v1/swagger.json",
-        "Pizzería Digital API v1"));
+        "Pizzería Digital API v1");
+});
 
 app.MapControllers();
+
+// Si entran a http://localhost:9000/
+// abrimos la página principal.
+app.MapGet("/", () => Results.Redirect("/index.html"));
 
 Console.WriteLine("======================================");
 Console.WriteLine(" 🍕 Pizzería Digital - BACKEND");
