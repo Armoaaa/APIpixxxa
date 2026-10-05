@@ -210,6 +210,40 @@ DELIMITER ;
 -- PROCEDIMIENTO: Obtener
 -- ClienteRepository.Obtener(int id)
 -- ============================================================
+DROP PROCEDURE IF EXISTS DarDeAltaPizza;
+
+DELIMITER $$
+
+CREATE PROCEDURE DarDeAltaPizza(
+    IN p_Nombre VARCHAR(100),
+    IN p_Tamano VARCHAR(50),
+    IN p_Precio DECIMAL(10,2)
+)
+BEGIN
+
+    INSERT INTO Pizza (
+        Nombre,
+        Tamano,
+        Precio
+    )
+    VALUES (
+        p_Nombre,
+        p_Tamano,
+        p_Precio
+    );
+
+    -- Devuelve la pizza recién creada
+    SELECT
+        Id,
+        Nombre,
+        Tamano,
+        Precio
+    FROM Pizza
+    WHERE Id = LAST_INSERT_ID();
+
+END $$
+
+DELIMITER ;
 
 DELIMITER //
 

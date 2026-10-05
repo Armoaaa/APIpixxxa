@@ -1,127 +1,407 @@
 // =====================================================
-//  comun.js  ->  lo usan LAS DOS páginas (catálogo y pedido)
-//  Acá están las funciones que se repetirían en ambas.
+// comun.js
+//
+// Lo usan las páginas:
+// - index.html
+// - pedido.html
+//
+// Contiene funciones compartidas.
+// =====================================================
+
+
+// =====================================================
+// CONFIGURACIÓN
 // =====================================================
 
 const RUTA_API = '/api';
-const CLAVE_CARRITO = 'pizzeria-carrito';   // nombre con el que se guarda el carrito en el navegador
 
-// Atajo para buscar un elemento de la página por su id.
+const CLAVE_CARRITO =
+  'pizzeria-carrito';
+
+
+
+// =====================================================
+// BUSCAR ELEMENTO
+// =====================================================
+
 function obtener(id) {
+
   return document.getElementById(id);
+
 }
 
-// Convierte un número en pesos. Ejemplo: 8500 -> "$ 8.500"
+
+
+// =====================================================
+// FORMATEAR PRECIO
+// =====================================================
+
 function formatearPrecio(valor) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0
-  }).format(valor);
+
+  return new Intl.NumberFormat(
+    'es-AR',
+    {
+      style: 'currency',
+      currency: 'ARS',
+      maximumFractionDigits: 0
+    }
+  ).format(valor);
+
 }
 
-// Muestra un texto debajo de un formulario.
-// salioBien = true  -> texto verde
-// salioBien = false -> texto rojo (error)
-function mostrarMensaje(elemento, texto, salioBien) {
-  elemento.textContent = texto;
-  elemento.classList.toggle('ok', salioBien);
+
+
+// =====================================================
+// MOSTRAR MENSAJE
+// =====================================================
+
+function mostrarMensaje(
+  elemento,
+  texto,
+  salioBien
+) {
+
+  elemento.textContent =
+    texto;
+
+
+  elemento.classList.toggle(
+    'ok',
+    salioBien
+  );
+
 }
 
-// ---------- Hablar con la API ----------
 
-// Hace una consulta al Backend y devuelve la respuesta.
-// metodo: 'GET' (pedir datos) o 'POST' (enviar datos).
-// Si algo sale mal, lanza un error con un mensaje que se puede mostrar.
-async function llamarApi(ruta, metodo = 'GET', datos = null) {
+
+// =====================================================
+// HABLAR CON LA API
+// =====================================================
+//
+// metodo:
+// GET  -> pedir información
+// POST -> enviar información
+//
+// La opción cache: 'no-store' hace que el navegador
+// vuelva a consultar la API.
+//
+// Esto es importante para el menú:
+//
+// BD cambia
+//    ↓
+// Recargás página
+//    ↓
+// GET /api/pizzas
+//    ↓
+// aparece la nueva pizza
+// =====================================================
+
+async function llamarApi(
+  ruta,
+  metodo = 'GET',
+  datos = null
+) {
+
+
   const opciones = {
+
     method: metodo,
-    headers: { 'Content-Type': 'application/json' }
+
+    cache: 'no-store',
+
+    headers: {
+      'Content-Type': 'application/json'
+    }
+
   };
 
+
+  // Si estamos enviando datos.
+
   if (datos !== null) {
-    opciones.body = JSON.stringify(datos);
+
+    opciones.body =
+      JSON.stringify(datos);
+
   }
 
-  const respuesta = await fetch(RUTA_API + ruta, opciones);
+
+  // ================================================
+  // Llamada al Backend
+  // ================================================
+
+  const respuesta =
+    await fetch(
+      RUTA_API + ruta,
+      opciones
+    );
+
+
+  // ================================================
+  // Intentar leer respuesta JSON
+  // ================================================
 
   let cuerpo = null;
+
+
   try {
-    cuerpo = await respuesta.json();
+
+    cuerpo =
+      await respuesta.json();
+
   } catch (error) {
-    cuerpo = null;   // la respuesta no tenía datos
+
+    cuerpo = null;
+
   }
+
+
+
+  // ================================================
+  // Error HTTP
+  // ================================================
 
   if (!respuesta.ok) {
-    if (cuerpo && cuerpo.mensaje) {
-      throw new Error(cuerpo.mensaje);
+
+
+    if (
+      cuerpo &&
+      cuerpo.mensaje
+    ) {
+
+      throw new Error(
+        cuerpo.mensaje
+      );
+
     }
-    throw new Error('No se pudo completar la operacion (' + respuesta.status + ').');
+
+
+    throw new Error(
+      'No se pudo completar la operacion (' +
+      respuesta.status +
+      ').'
+    );
+
   }
+
 
   return cuerpo;
+
 }
 
-// ---------- Carrito ----------
-// El carrito se guarda en el navegador (localStorage) para que
-// no se pierda cuando pasás del catálogo a la página del pedido.
-// Es una lista de este estilo: [ { pizzaId: 1, cantidad: 2 }, { pizzaId: 3, cantidad: 1 } ]
+
+
+// =====================================================
+// CARRITO
+// =====================================================
 
 function leerCarrito() {
+
+
   try {
-    const guardado = localStorage.getItem(CLAVE_CARRITO);
+
+
+    const guardado =
+      localStorage.getItem(
+        CLAVE_CARRITO
+      );
+
+
     if (guardado) {
-      return JSON.parse(guardado);
+
+      return JSON.parse(
+        guardado
+      );
+
     }
+
+
   } catch (error) {
-    // si el navegador no deja leer, arrancamos con un carrito vacío
+
+    // Si hay un problema con localStorage,
+    // empezamos con carrito vacío.
+
   }
+
+
   return [];
+
 }
 
-function guardarCarrito(carrito) {
+
+
+// =====================================================
+// GUARDAR CARRITO
+// =====================================================
+
+function guardarCarrito(
+  carrito
+) {
+
+
   try {
-    localStorage.setItem(CLAVE_CARRITO, JSON.stringify(carrito));
+
+    localStorage.setItem(
+      CLAVE_CARRITO,
+      JSON.stringify(carrito)
+    );
+
+
   } catch (error) {
-    // si el navegador no deja guardar, no pasa nada grave
+
+    // Si el navegador no permite guardar,
+    // no hacemos nada.
+
   }
+
 }
 
-// Suma o resta pizzas. diferencia = +1 agrega una, -1 quita una.
-// Si una pizza llega a 0 unidades, se saca del carrito.
-// Devuelve el carrito actualizado.
-function cambiarCantidad(pizzaId, diferencia) {
-  let carrito = leerCarrito();
-  const item = carrito.find(entrada => entrada.pizzaId === pizzaId);
+
+
+// =====================================================
+// CAMBIAR CANTIDAD
+// =====================================================
+//
+// diferencia:
+// +1 = agregar
+// -1 = quitar
+// =====================================================
+
+function cambiarCantidad(
+  pizzaId,
+  diferencia
+) {
+
+
+  let carrito =
+    leerCarrito();
+
+
+  const item =
+    carrito.find(
+      entrada =>
+        entrada.pizzaId === pizzaId
+    );
+
+
+  // ================================================
+  // La pizza ya está en el carrito
+  // ================================================
 
   if (item) {
-    item.cantidad += diferencia;
-  } else if (diferencia > 0) {
-    carrito.push({ pizzaId: pizzaId, cantidad: diferencia });
+
+    item.cantidad +=
+      diferencia;
+
   }
 
-  carrito = carrito.filter(entrada => entrada.cantidad > 0);
-  guardarCarrito(carrito);
+
+  // ================================================
+  // La pizza todavía no estaba
+  // ================================================
+
+  else if (
+    diferencia > 0
+  ) {
+
+    carrito.push({
+
+      pizzaId: pizzaId,
+
+      cantidad: diferencia
+
+    });
+
+  }
+
+
+  // ================================================
+  // Eliminar las cantidades 0 o negativas
+  // ================================================
+
+  carrito =
+    carrito.filter(
+      entrada =>
+        entrada.cantidad > 0
+    );
+
+
+  guardarCarrito(
+    carrito
+  );
+
+
   return carrito;
+
 }
 
-// Cuenta cuántas pizzas hay en total (sumando las cantidades).
-function contarPizzas(carrito) {
+
+
+// =====================================================
+// CONTAR PIZZAS
+// =====================================================
+
+function contarPizzas(
+  carrito
+) {
+
+
   let total = 0;
-  for (const item of carrito) {
-    total += item.cantidad;
+
+
+  for (
+    const item of carrito
+  ) {
+
+    total +=
+      item.cantidad;
+
   }
+
+
   return total;
+
 }
 
-// Actualiza el numerito del link "Mi pedido" del menú de arriba.
+
+
+// =====================================================
+// CONTADOR DEL NAV
+// =====================================================
+
 function actualizarContadorNav() {
-  const etiqueta = obtener('nav-cantidad');
-  if (!etiqueta) return;
 
-  const cantidad = contarPizzas(leerCarrito());
-  etiqueta.textContent = cantidad;
-  etiqueta.hidden = cantidad === 0;
+
+  const etiqueta =
+    obtener(
+      'nav-cantidad'
+    );
+
+
+  if (!etiqueta) {
+    return;
+  }
+
+
+  const cantidad =
+    contarPizzas(
+      leerCarrito()
+    );
+
+
+  etiqueta.textContent =
+    cantidad;
+
+
+  etiqueta.hidden =
+    cantidad === 0;
+
 }
+
+
+
+// =====================================================
+// ACTUALIZAR AL CARGAR
+// =====================================================
 
 actualizarContadorNav();
