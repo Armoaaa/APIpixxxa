@@ -19,6 +19,16 @@ public class ClienteController : ControllerBase
     public async Task<ActionResult<Cliente>> Crear(
         [FromBody] Cliente cliente)
     {
+        if (string.IsNullOrWhiteSpace(cliente.Nombre))
+        {
+            return BadRequest("El nombre es obligatorio.");
+        }
+
+        if (string.IsNullOrWhiteSpace(cliente.Direccion))
+        {
+            return BadRequest("La dirección es obligatoria.");
+        }
+
         Cliente nuevoCliente = await _clienteRepository.Crear(
             cliente.Nombre,
             cliente.Telefono,
@@ -33,11 +43,13 @@ public class ClienteController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Cliente>> Obtener(int id)
     {
-        Cliente? cliente = await _clienteRepository.Obtener(id);
+        Cliente? cliente =
+            await _clienteRepository.Obtener(id);
 
         if (cliente == null)
         {
-            return NotFound();
+            return NotFound(
+                $"No existe el cliente con ID {id}.");
         }
 
         return Ok(cliente);

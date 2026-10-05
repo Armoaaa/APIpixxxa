@@ -4,27 +4,26 @@ using PizzeriaDigital.Shared.Configuracion;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers
 builder.Services.AddControllers();
 
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(opciones =>
 {
-    opciones.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "Pizzería Digital API",
-        Version = "v1",
-        Description = "API REST de la pizzería."
-    });
+    opciones.SwaggerDoc(
+        "v1",
+        new Microsoft.OpenApi.Models.OpenApiInfo
+        {
+            Title = "Pizzería Digital API",
+            Version = "v1",
+            Description = "API REST de la pizzería."
+        });
 });
 
-// Repositorios
 builder.Services.AddSingleton<PizzaRepository>();
 builder.Services.AddSingleton<ClienteRepository>();
 builder.Services.AddSingleton<PedidoRepository>();
 
-// Servicios
 builder.Services.AddSingleton<OrquestadorPedidos>();
 
 var app = builder.Build();
@@ -33,14 +32,12 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseSwagger();
+
 app.UseSwaggerUI(c =>
     c.SwaggerEndpoint(
         "/swagger/v1/swagger.json",
-        "Pizzería Digital API v1"
-    )
-);
+        "Pizzería Digital API v1"));
 
-// Controllers
 app.MapControllers();
 
 Console.WriteLine("======================================");
